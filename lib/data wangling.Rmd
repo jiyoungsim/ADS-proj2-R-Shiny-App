@@ -1,0 +1,327 @@
+---
+title: "rodent inspection"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(ggmap)
+library(dplyr)
+
+```
+
+## rodent(useless)
+```{r}
+# read and clean data
+rodent<-read.csv("Rodent_Inspection.csv")
+rodent$INSPECTION_DATE<-as.character(rodent$INSPECTION_DATE)
+
+
+rodent_recent<-rodent[as.numeric(substr(rodent$INSPECTION_DATE, 7, 10))>2017,]
+
+
+colnames(rodent_recent)
+rodent_u<-rodent[,c("BBL","BORO_CODE","BLOCK","LOT","ZIP_CODE","LATITUDE", "LONGITUDE","RESULT")]
+rodent_useful<-na.omit(rodent_u)
+colnames(rodent_useful)
+
+map_NY <- get_map("New York City", zoom=10, 
+    source="google", maptype="toner-background")
+ggmap(map_NY)
+g <- ggmap(map_NY) 
+m<-g + geom_point(data=rodent_useful,aes(x=rodent_useful$LONGITUDE,y=rodent_useful$LATITUDE,color=rodent_useful$RESULT),size=0.3, alpha=0.3)
+m
+####group by zipcode
+library(dplyr)
+
+rodent_zip<-rodent_useful%>% group_by(ZIP_CODE,RESULT)%>%dplyr::summarise(count=n())
+rodent_ars_zip<-rodent_zip[rodent_zip$RESULT=="Active Rat Signs"&rodent_zip$ZIP_CODE>0,c(1,3)]
+rodent_ars_zip$ZIP_CODE<-as.character(rodent_ars_zip$ZIP_CODE)
+colnames(rodent_ars_zip)<-c("region","value")
+
+# ggmap
+library(choroplethr)
+library(choroplethrZip)
+nyc_fips = c(36005, 36047, 36061, 36081, 36085)
+zip_choropleth(rodent_ars_zip,county_zoom = nyc_fips,title       = "New York City Active Rat Sign since 2018")
+
+
+
+# interactive map
+
+
+
+library(leaflet)
+library(rgdal)
+library(sf)
+
+
+rodent_pc_zip<-rodent_zip[rodent_zip$RESULT=="Problem Conditions"&rodent_zip$ZIP_CODE>0,c(1,3)]
+rodent_pc_zip$ZIP_CODE<-as.character(rodent_pc_zip$ZIP_CODE)
+colnames(rodent_pc_zip)<-c("ZIPCODE","pc")
+
+rodent_pi_zip<-rodent_zip[rodent_zip$RESULT=="Passed Inspection"&rodent_zip$ZIP_CODE>0,c(1,3)]
+rodent_pi_zip$ZIP_CODE<-as.character(rodent_pi_zip$ZIP_CODE)
+colnames(rodent_pi_zip)<-c("ZIPCODE","pi")
+
+zip_code <- st_read('zip/ZIP_CODE_040114.shp')
+zip_code <- subset(zip_code, select = c(ZIPCODE,geometry))
+colnames(rodent_ars_zip)<-c("ZIPCODE","ars")
+zip_code<-left_join(zip_code,rodent_ars_zip,by="ZIPCODE")
+zip_code<-left_join(zip_code,rodent_pc_zip,by="ZIPCODE")
+zip_code<-left_join(zip_code,rodent_pi_zip,by="ZIPCODE")
+
+shapeData <- st_transform(zip_code, CRS("+proj=longlat +datum=WGS84"))
+
+
+pal <- colorNumeric(
+  palette = "Reds",
+  domain = NULL)
+
+nyc_map <- leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(ars), fillOpacity = 1,label = ~paste0("Active Rat Sign: ", ars), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="active-rat-sign") %>%
+   addPolygons(data=shapeData,weight=1,color = ~pal(pi), fillOpacity = 1,label = ~paste0("Pass Inspection: ", pi), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="pass-inspection") %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(pc), fillOpacity = 1,label = ~paste0("Problem Condition: ", pc), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="problem-condition") %>%
+addLegend(pal = pal, values = c(shapeData$ars,shapeData$pc,shapeData$pi), opacity = 0.7, title = NULL,   position = "bottomright") %>%
+ setView(-73.9, 40.73, zoom = 10) %>%
+  addProviderTiles("CartoDB.Positron")  %>%
+  addLayersControl(baseGroups = c("active-rat-sign", "pass-inspection","problem-condition"))
+ 
+nyc_map
+
+
+
+```
+##Environment=E-designation+rodent 
+```{r}
+# e-designation data
+# e_d<-read.csv("E-Designations__CSV_file.csv")
+# colnames(e_d)
+# e_d1<-e_d[,c(3,4,5,6,7,8)]
+# colnames(e_d1)[1:3]<-c("b","t1","t2")
+# # find the zip code for each observation
+# bbl<-read.table("bobaadr.txt",sep=",",header = T)
+# bbl<-unique(bbl[,c('boro','block','lot','zipcode')])
+# bbl<-na.omit(bbl)
+# bbl
+# colnames(bbl)[1:3]<-c("b","t1","t2")
+# # combine the dataset
+# e_d_all<-left_join(e_d1,bbl,by=c("b","t1","t2"))
+# 
+# # Noise
+# noise<-e_d_all%>%na.omit()%>%group_by(zipcode)%>%dplyr::summarize(count=sum(Noise.Code))
+# colnames(noise)<-c("region","value")
+# noise$region<-as.character(noise$region)
+# 
+# 
+# #hazardous materials
+# hazadous<-e_d_all%>%na.omit()%>%group_by(zipcode)%>%dplyr::summarize(count=sum(HazMat.Code))
+# colnames(hazadous)<-c("region","value")
+# hazadous$region<-as.character(hazadous$region)
+# 
+# 
+# 
+# # Air polution
+# air<-e_d_all%>%na.omit()%>%group_by(zipcode)%>%dplyr::summarize(count=sum(Air.Code))
+# colnames(air)<-c("region","value")
+# air$region<-as.character(air$region)
+# 
+# #  active rat sign
+# rodent<-read.csv("Rodent_Inspection.csv")
+# rodent$INSPECTION_DATE<-as.character(rodent$INSPECTION_DATE)
+# rodent_recent<-rodent[as.numeric(substr(rodent$INSPECTION_DATE, 7, 10))>2017,]
+# rodent_u<-rodent[,c("BBL","BORO_CODE","BLOCK","LOT","ZIP_CODE","LATITUDE", "LONGITUDE","RESULT")]
+# rodent_useful<-na.omit(rodent_u)
+# colnames(rodent_useful)
+# rodent_zip<-rodent_useful%>% group_by(ZIP_CODE,RESULT)%>%dplyr::summarise(count=n())
+# rodent_ars_zip<-rodent_zip[rodent_zip$RESULT=="Active Rat Signs"&rodent_zip$ZIP_CODE>0,c(1,3)]
+# rodent_ars_zip$ZIP_CODE<-as.character(rodent_ars_zip$ZIP_CODE)
+# colnames(rodent_ars_zip)<-c("region","value")
+# 
+# write.csv(rodent_ars_zip,"rodent_ars_zip.csv")
+# write.csv(air,"air.csv")
+# write.csv(noise,"noise.csv")
+# write.csv(hazadous,"hazadous.csv")
+
+air<-read.csv("air.csv")
+air<-air[,2:3]
+air$ZIPCODE<-as.factor(air$ZIPCODE)
+noise<-read.csv("noise.csv")
+noise<-noise[,2:3]
+noise$ZIPCODE<-as.factor(noise$ZIPCODE)
+hazadous<-read.csv('hazadous.csv')
+hazadous<-hazadous[,2:3]
+hazadous$ZIPCODE<-as.factor(hazadous$ZIPCODE)
+rodent_ars_zip<-read.csv("rodent_ars_zip.csv")
+rodent_ars_zip<-rodent_ars_zip[,2:3]
+rodent_ars_zip$ZIPCODE<-as.factor(rodent_ars_zip$ZIPCODE)
+## interactive map, merge these four datasets together.
+colnames(hazadous)<-c("ZIPCODE","hazadous")
+colnames(air)<-c("ZIPCODE","air")
+colnames(noise)<-c("ZIPCODE","noise")
+colnames(rodent_ars_zip)<-c("ZIPCODE","rat")
+zip_code <- st_read('zip/ZIP_CODE_040114.shp')
+zip_code <- subset(zip_code, select = c(ZIPCODE,geometry))
+zip_code<-left_join(zip_code,air,by="ZIPCODE")
+zip_code<-left_join(zip_code,noise,by="ZIPCODE")
+zip_code<-left_join(zip_code,hazadous,by="ZIPCODE")
+zip_code<-left_join(zip_code,rodent_ars_zip,by="ZIPCODE")
+
+shapeData <- st_transform(zip_code, CRS("+proj=longlat +datum=WGS84"))
+
+
+pal <- colorNumeric(
+  palette = "Blues",
+  domain = NULL)
+
+nyc_map <- leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(air), fillOpacity = 1,label = ~paste0("Air Pollution: ", air), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="Air Pollution") %>%
+   addPolygons(data=shapeData,weight=1,color = ~pal(noise), fillOpacity = 1,label = ~paste0("Noise Pollution: ", noise), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="Noise Pollution") %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(hazadous), fillOpacity = 1,label = ~paste0("Hazadous Materials: ", hazadous), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="Hazadous Materials") %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(rat), fillOpacity = 1,label = ~paste0("Active Rat Sign: ", rat), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="Active Rat Sign")%>%
+addLegend(pal = pal, values = c(shapeData$air,shapeData$noise,shapeData$hazadous,shapeData$rat), opacity = 0.7, title = NULL,   position = "bottomright") %>%
+ setView(-73.9, 40.73, zoom = 10) %>%
+  addProviderTiles("CartoDB.Positron")  %>%
+  addLayersControl(baseGroups = c("Air Pollution", "Noise Pollution","Hazadous Materials","Active Rat Sign"))
+ 
+nyc_map
+
+```
+### child care
+```{r}
+# library(dplyr)
+# 
+# child_care<-read.csv("DOHMH_Childcare_Center_Inspections.csv")
+# 
+# child_care<-child_care[,c("Center.Name","Building.Identification.Number","ZipCode","Age.Range","Child.Care.Type","Average.Violation.Rate.Percent","Inspection.Date")]
+# child_care<-na.omit(child_care)
+# child_care<-child_care[child_care$Age.Range!="",]
+# # violation.Rate.Percent: Percent of Initial Inspections that resulted in at least one Critical or Public Health Hazard (PHH) violation
+# building<-read.csv("building.csv",header = T)
+# building<-building[,c(1,3)]
+# colnames(building)<-c("coordinates","Building.Identification.Number")
+# child_care<-left_join(x=child_care,y=building)
+# child_care$longitude<-as.numeric(substr(child_care$coordinates, 17, 33))
+# child_care$latitude<-as.numeric(substr(child_care$coordinates, 35, 50))
+# child_care<-child_care[,c(1,3,4,5,6,7,9,10)]
+
+# 
+#  write.csv(child_care,"child_care_coordinates.csv")
+
+child_care<-read.csv('child_care_coordinates.csv')
+###number of Childcare centers in each neighboor.
+child_care$Inspection.Date=as.Date(child_care$Inspection.Date,'%m/%d/%Y')
+f<-child_care %>% group_by(Center.Name) %>%  dplyr::summarise(Inspection.Date=max(Inspection.Date))
+cc<-left_join(f,child_care,by=c('Center.Name','Inspection.Date'))
+cc<-unique(cc)
+
+childcare<-cc[,-2]
+childcare<-na.omit(childcare)
+
+pre.school<-childcare[childcare$Child.Care.Type=="Child Care - Pre School",]%>%
+  group_by(ZipCode)%>%dplyr::summarise(count=n())
+infant<-childcare[childcare$Child.Care.Type=="Child Care - Infants/Toddlers",]%>%
+  group_by(ZipCode)%>%dplyr::summarise(count=n())
+
+
+## interactive map, merge these three maps together.
+colnames(pre.school)<-c("ZIPCODE","pre.school")
+pre.school$ZIPCODE<-as.factor(pre.school$ZIPCODE)
+colnames(infant)<-c("ZIPCODE","infant")
+infant$ZIPCODE<-as.factor(infant$ZIPCODE)
+
+zip_code <- st_read('zip/ZIP_CODE_040114.shp')
+zip_code <- subset(zip_code, select = c(ZIPCODE,geometry))
+zip_code<-left_join(zip_code,pre.school,by="ZIPCODE")
+zip_code<-left_join(zip_code,infant,by="ZIPCODE")
+
+
+shapeData <- st_transform(zip_code, CRS("+proj=longlat +datum=WGS84"))
+
+# user input zip code
+zc=10029
+nearby_cc<-childcare[childcare$ZipCode==zc,]
+c<-nearby_cc$Average.Violation.Rate.Percent
+
+pal <- colorNumeric(
+  palette = "Reds",
+  domain = NULL)
+
+
+getColor <- function(vio) {
+  sapply(nearby_cc$Average.Violation.Rate.Percent, function(p) {
+  if(p <=mean(childcare$Average.Violation.Rate.Percent) ) {
+    "green"
+  }  else {
+    "red"
+  } })
+}
+
+
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = getColor(c)
+)
+
+
+nyc_map <- leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(pre.school), fillOpacity = 1,label = ~paste0("pre school: ", pre.school), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="pre school") %>%
+  addPolygons(data=shapeData,weight=1,color = ~pal(infant), fillOpacity = 1,label = ~paste0("infant: ", infant), highlight = highlightOptions(weight = 2,color = "red",bringToFront = TRUE),group="infant") %>%
+addLegend(pal = pal, values = c(shapeData$infant,shapeData$pre.school), opacity = 0.7, title = NULL,   position = "bottomright")%>%
+  addAwesomeMarkers(data=nearby_cc[nearby_cc$Age.Range=="0 YEARS - 2 YEARS",],nearby_cc[nearby_cc$Age.Range=="0 YEARS - 2 YEARS",]$longitude,nearby_cc[nearby_cc$Age.Range=="0 YEARS - 2 YEARS",]$latitude,label = as.character(nearby_cc$Center.Name),icon=icons,group="0 YEARS - 2 YEARS")%>%
+  addAwesomeMarkers(data=nearby_cc[nearby_cc$Age.Range=="2 YEARS - 5 YEARS",],nearby_cc[nearby_cc$Age.Range=="2 YEARS - 5 YEARS",]$longitude,nearby_cc[nearby_cc$Age.Range=="2 YEARS - 5 YEARS",]$latitude,label = as.character(nearby_cc$Center.Name),icon=icons,group="2 YEARS - 5 YEARS")%>%
+  addAwesomeMarkers(data=nearby_cc[nearby_cc$Age.Range=="3 YEARS - 5 YEARS",],nearby_cc[nearby_cc$Age.Range=="3 YEARS - 5 YEARS",]$longitude,nearby_cc[nearby_cc$Age.Range=="3 YEARS - 5 YEARS",]$latitude,label = as.character(nearby_cc$Center.Name),icon=icons,group="3 YEARS - 5 YEARS") %>%
+ setView(-73.9, 40.73, zoom = 10) %>%
+  addProviderTiles("CartoDB.Positron")  %>%
+  addLayersControl(baseGroups = c("pre school","infant"),overlayGroups = c("0 YEARS - 2 YEARS", "3 YEARS - 5 YEARS","2 YEARS - 5 YEARS"))
+ 
+nyc_map
+
+
+
+
+```
+
+
+
+```{r}
+cc<-read.csv("child_care.csv")
+ccc<-read.csv("child_care_coordinates.csv")
+ccc<-ccc[,c(2,7,8,9)]
+child_care<-left_join(cc,ccc,"Center.Name")
+
+ child_care$Inspection.Date=as.Date(child_care$Inspection.Date,'%m/%d/%Y')
+      f<-child_care %>% group_by(Legal.Name) %>%  dplyr::summarise(Inspection.Date=max(Inspection.Date))
+      cc<-left_join(f,child_care,by=c('Legal.Name','Inspection.Date'))
+      cc<-unique(cc)
+      
+      childcare<-cc[,-2]
+      childcare<-na.omit(childcare)
+
+      
+write.csv(childcare,"childcare.csv")
+
+childcare<-read.csv("childcare.csv")
+childcare1<-childcare[,2:15]
+childcare<-unique(childcare1)
+write.csv(childcare,"childcare_norepete.csv")
+```
+
+```{r}
+childcare<-read.csv("child_care_without.csv")
+cc<-read.csv("child_care+c.csv")
+cc<-cc %>% group_by(Legal.Name) %>%  dplyr::summarise(lagitude=max(latitude),longitude=max(longitude))
+
+cc<-unique(cc)
+childcare<-dplyr::left_join(childcare,cc,by="Legal.Name")
+write.csv(childcare,"final child care.csv",row.names = F)
+```
+
