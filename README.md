@@ -49,11 +49,11 @@ Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by
 
 ```
 proj/
-├── app/
-├── lib/
-├── data/
+├── app/ app files for the Shiny App (i.e., ui.r and server.r)
+├── lib/ codes to generate preprocessed data
+├── data/ data used in the analysis
 ├── doc/
-└── output/
+└── output/ analysis output, processed datasets, logs, or other processed things
 ```
 
 Please see each subfolder for a README file.
