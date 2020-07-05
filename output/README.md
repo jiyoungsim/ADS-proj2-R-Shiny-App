@@ -2,7 +2,7 @@
 
 ### Output folder
 
-The output directory contains analysis output, processed datasets, logs, or other processed things.
+The output directory contains processed datasets.
 
 air.csv, hazadous.csv, noise.csv, rodent_ars_zip.csv: data cleaned for environmental factors, each indicating air pollution, hazardous materials, noise pollution, and rodent activity.
 
