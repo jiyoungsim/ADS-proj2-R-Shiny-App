@@ -43,7 +43,7 @@ proj/
 ├── lib/ codes to generate preprocessed data and visualizations
 ├── data/ data used in the analysis
 ├── doc/
-└── output/ analysis output, processed datasets, logs, or other processed things
+└── output/ processed datasets
 ```
 
 Please see each subfolder for a README file.
