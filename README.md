@@ -40,7 +40,7 @@ Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by
 ```
 proj/
 ├── app/ app files for the Shiny App (i.e., ui.r and server.r)
-├── lib/ codes to generate preprocessed data
+├── lib/ codes to generate preprocessed data and maps
 ├── data/ data used in the analysis
 ├── doc/
 └── output/ analysis output, processed datasets, logs, or other processed things
