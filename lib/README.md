@@ -1,4 +1,4 @@
-# Project 2: Shiny App Development Version 2.0
+# FiCoH NYC (Find Cozy Home in NYC)
 
 ### Code lib Folder
 
