@@ -1,6 +1,6 @@
 # FiCoH NYC (Find Cozy Home in NYC)
 
-### Code lib Folder
+### Lib Folder
 
 The lib directory contains codes to generate preprocessed data and visualizations.
 
