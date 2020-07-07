@@ -1,10 +1,11 @@
 # FiCoH NYC (Find Cozy Home in NYC)
-+ **Keywords: Data Visualization, Data Analysis, Data Cleaning, Geospatial Analysis, Shiny App, Interactive Dashboard, R**
 
 + **Team Members**
 	+ Young Sim
 	+ Yanyan Liu
 	+ Tongyu Wang
+	
++ **Keywords: Data Visualization, Data Analysis, Data Cleaning, Geospatial Analysis, Shiny App, Interactive Dashboard, R**
 
 + **Objective**: The goal of this project is to develope a Shiny App that lets home seekers explore living environment in different parts of NYC. All data used for the app are originally from [NYC Open Data]
 
