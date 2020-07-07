@@ -1,4 +1,5 @@
 # FiCoH NYC (Find Cozy Home in NYC)
++ **Keywords: Data Visualization, Data Analysis, Data Cleaning, Geospatial Analysis, Shiny App, Interactive Dashboard, R**
 
 + **Team Members**
 	+ Young Sim
@@ -32,8 +33,6 @@
 	+ Young Sim cleaned crime data and generated map visualizations for Safety tab and At a Glance tab. She also cleaned data and generated boxplots for Safety tab and Environment tab as well as tables in At a Glance tab. She improved ui and server for Shiny App based on the baseline Shiny App for User Manual tab, At a Glance tab, Safety tab, and Environment tab.
 	+ Yanyan Liu cleaned E-designation data, rodent inspection data, and childcare data and generated map visualizations for environment tab and childcare tab. She improved ui and server for Shiny App based on the baseline Shiny App for User Manual tab, Environment tab, and Childcare tab.
 	+ Tongyu Wang developed baseline Shiny App and wrote draft for user manual script.
-
-+ **Keywords: Data Visualization, Data Analysis, Data Cleaning, Geospatial Analysis, Shiny App, Interactive Dashboard, R**
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
